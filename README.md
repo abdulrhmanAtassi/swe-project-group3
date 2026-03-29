@@ -1,4 +1,4 @@
-# swe-project-agile-group3
+# swe-project-group3
 
 ## Team Member 
 - Abdulrhman Atassi 20210651
