@@ -1,0 +1,58 @@
+@startuml Activity_4_AlertResponse
+skinparam defaultFontSize 14
+skinparam activityFontSize 14
+skinparam arrowFontSize 13
+skinparam swimlaneBorderThickness 2
+
+title Activity Diagram 4 — Alert and Incident Response Flow
+
+|IoT Device / Sensor|
+start
+:Detect abnormal reading\n(e.g. smoke, motion at 3AM,\nunusual temperature);
+:Transmit alert event via MQTT;
+
+|IoT Gateway|
+:Receive alert event;
+:Classify event severity\n(Low / Medium / High);
+:Forward to Device Management Service;
+
+|Device Management Service|
+:Log incident to central database;
+:Update device state in cache;
+:Escalate to Automation Engine;
+
+|Automation Engine|
+:Match incident to emergency rules\n(e.g. smoke → unlock doors, turn off HVAC);
+if (Emergency rule matched?) then (yes)
+    :Execute emergency actions immediately;
+    :Log all triggered actions;
+else (no)
+    :Flag for user decision;
+endif
+:Forward incident to Notification Service;
+
+|Notification Service|
+:Determine alert priority;
+:Dispatch high-priority push notification\nand email to Homeowner;
+
+|Homeowner / Family Member|
+:Receive alert on mobile or web app;
+:Review incident details and camera feed;
+if (False alarm?) then (yes)
+    :Mark as false alarm;
+    :System logs feedback for AI learning;
+else (no)
+    :Take manual action\n(e.g. call emergency services,\nremotely lock doors);
+    :Issue follow-up commands via app;
+endif
+
+|Device Management Service|
+:Update incident status to Resolved;
+:Generate incident report in database;
+
+|AI / ML Service|
+:Incorporate incident data\ninto behavior model;
+:Adjust anomaly detection thresholds\nif false alarm rate is high;
+stop
+
+@enduml

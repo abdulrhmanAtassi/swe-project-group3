@@ -1,0 +1,72 @@
+@startuml Activity_6_AdminMonitoring
+skinparam defaultFontSize 14
+skinparam activityFontSize 14
+skinparam arrowFontSize 13
+skinparam swimlaneBorderThickness 2
+
+title Activity Diagram 6 — System Administrator Monitoring and Configuration
+
+|System Administrator|
+start
+:Log in to admin web interface;
+:Navigate to System Dashboard;
+
+|Web Application|
+:Request system health metrics from API Gateway;
+
+|API Gateway|
+:Validate admin authentication token;
+:Verify requester has Administrator role;
+if (Authorized?) then (yes)
+    :Route to relevant backend services;
+else (no)
+    :Return 403 Forbidden;
+    |Web Application|
+    :Display access denied;
+    stop
+endif
+
+|Device Management Service|
+:Retrieve all device statuses\nand connectivity statistics;
+:Return device health report;
+
+|User & Preference Service|
+:Retrieve active user accounts\nand session statistics;
+:Return user report;
+
+|Automation Engine|
+:Retrieve active rules count\nand execution logs;
+:Return automation report;
+
+|Web Application|
+:Aggregate and render system dashboard\n(device health, user activity, rule stats);
+
+|System Administrator|
+:Review system health dashboard;
+if (Issue detected?) then (yes)
+    :Select affected component;
+    fork
+        :Manage user accounts\n(deactivate, reset password,\nchange role);
+    fork again
+        :Manage device configurations\n(remove orphaned devices,\nupdate firmware records);
+    fork again
+        :Review and disable\nproblematic automation rules;
+    end fork
+    |Web Application|
+    :Submit configuration change to API Gateway;
+    |API Gateway|
+    :Route change to appropriate service;
+    :Service applies and persists change;
+    |Web Application|
+    :Confirm change applied successfully;
+    |System Administrator|
+    :Verify system health restored;
+else (no)
+    :No action required;
+endif
+
+|System Administrator|
+:Export system report if needed;
+stop
+
+@enduml

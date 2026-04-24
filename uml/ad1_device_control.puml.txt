@@ -1,0 +1,81 @@
+@startuml Activity_1_DeviceControl
+skinparam defaultFontSize 14
+skinparam activityFontSize 14
+skinparam arrowFontSize 13
+skinparam swimlaneBorderThickness 2
+
+title Activity Diagram 1 — Device Control Flow
+
+|Homeowner / Family Member|
+start
+:Open mobile or web app;
+:Select target device;
+:Issue control command\n(e.g. turn off lights, set thermostat to 22°C);
+
+|Mobile / Web App|
+:Validate input format;
+if (Input valid?) then (yes)
+    :Send command request to API Gateway;
+else (no)
+    :Display input error to user;
+    stop
+endif
+
+|API Gateway|
+:Validate authentication token;
+if (Token valid?) then (yes)
+    :Check user permission for device;
+    if (Permission granted?) then (yes)
+        :Route to Device Management Service;
+    else (no)
+        :Return 403 Forbidden;
+        |Mobile / Web App|
+        :Display permission error;
+        stop
+    endif
+else (no)
+    :Return 401 Unauthorized;
+    |Mobile / Web App|
+    :Prompt user to re-login;
+    stop
+endif
+
+|Device Management Service|
+:Look up device in database;
+if (Device online?) then (yes)
+    :Update state in cache;
+    :Forward command to IoT Gateway;
+else (no)
+    :Return device unavailable;
+    |Mobile / Web App|
+    :Display device offline message;
+    stop
+endif
+
+|IoT Gateway|
+:Translate to device protocol\n(Zigbee / MQTT / Bluetooth);
+:Dispatch command to physical device;
+if (Device acknowledges?) then (yes)
+    :Confirm success upstream;
+else (no)
+    :Retry up to 3 times;
+    if (Retry successful?) then (yes)
+        :Confirm success upstream;
+    else (no)
+        :Report device failure;
+        stop
+    endif
+endif
+
+|Device Management Service|
+:Persist updated state to database;
+:Notify Automation Engine of state change;
+
+|Mobile / Web App|
+:Display updated device status;
+
+|Homeowner / Family Member|
+:View confirmed device state;
+stop
+
+@enduml

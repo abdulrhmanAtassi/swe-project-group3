@@ -1,0 +1,77 @@
+@startuml C4_L2_SmartHome
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title C4 Level 2 — Container Diagram: Smart Home Automation System
+
+LAYOUT_TOP_DOWN()
+LAYOUT_WITH_LEGEND()
+
+Person(homeowner, "Primary Homeowner", "Full-control household user.")
+Person(familyMember, "Family Member", "Registered household user with scoped permissions.")
+Person(admin, "System Administrator", "Manages system configuration and health.")
+
+System_Boundary(shas, "Smart Home Automation System") {
+
+    ' ── Layer 1: Clients ──
+    Container(mobileApp, "Mobile App", "iOS / Android", "Device control, routines, and alerts.")
+    Container(webApp, "Web Application", "React / Vue", "Browser interface for management and monitoring.")
+
+    ' ── Layer 2: Gateway ──
+    Container(apiGateway, "API Gateway", "REST / HTTPS", "Single entry point. Handles auth, rate limiting, and routing.")
+
+    ' ── Layer 3: Backend Services ──
+    Container(userService, "User & Preference Service", "Backend", "Manages accounts, roles, permissions, and per-user preferences.")
+    Container(deviceService, "Device Management Service", "Backend", "Device registration, status tracking, and command dispatch.")
+    Container(automationEngine, "Automation Engine", "Backend", "Processes rules and event-triggered routines.")
+    Container(notificationService, "Notification Service", "Backend", "Dispatches real-time alerts to users.")
+    Container(aiService, "AI / ML Service", "ML Module", "Learns behavior patterns, suggests automations.")
+
+    ' ── Layer 4: IoT ──
+    Container(iotGateway, "IoT Gateway", "Protocol Bridge", "Translates HTTP commands to Zigbee / MQTT / Bluetooth.")
+
+    ' ── Layer 5: Data ──
+    ContainerDb(mainDb, "Central Database", "PostgreSQL", "Users, devices, rules, preferences, logs.")
+    ContainerDb(stateCache, "Device State Cache", "Redis", "Real-time device states for fast reads.")
+}
+
+System_Ext(iotDevices, "IoT Devices", "Thermostats, lights, cameras, alarms, sensors.")
+System_Ext(pushService, "Push / Email Service", "Firebase FCM, SendGrid.")
+System_Ext(authService, "Authentication Service", "OAuth 2.0 identity provider.")
+
+' ── Client → Gateway ──
+Rel_Down(homeowner, mobileApp, "Uses", "HTTPS")
+Rel_Down(homeowner, webApp, "Uses", "HTTPS")
+Rel_Down(familyMember, mobileApp, "Uses", "HTTPS")
+Rel_Down(admin, webApp, "Monitors", "HTTPS")
+Rel_Down(mobileApp, apiGateway, "Sends requests", "HTTPS/REST")
+Rel_Down(webApp, apiGateway, "Sends requests", "HTTPS/REST")
+
+' ── Gateway → Services ──
+Rel_Down(apiGateway, authService, "Validates tokens", "OAuth 2.0")
+Rel_Down(apiGateway, userService, "Routes user requests", "REST")
+Rel_Down(apiGateway, deviceService, "Routes device commands", "REST")
+Rel_Down(apiGateway, automationEngine, "Routes automation requests", "REST")
+
+' ── Services → Data ──
+Rel_Down(userService, mainDb, "Reads/writes user data", "SQL")
+Rel_Down(deviceService, mainDb, "Persists device records", "SQL")
+Rel_Down(deviceService, stateCache, "Reads/writes device state", "Redis")
+Rel_Down(automationEngine, mainDb, "Reads/writes rules", "SQL")
+Rel_Down(automationEngine, stateCache, "Reads device states", "Redis")
+Rel_Down(aiService, mainDb, "Reads usage history", "SQL")
+
+' ── Service-to-Service ──
+Rel(automationEngine, deviceService, "Triggers device actions", "Internal")
+Rel(automationEngine, aiService, "Requests suggestions", "Internal API")
+Rel(automationEngine, notificationService, "Triggers alerts", "Internal")
+Rel(deviceService, notificationService, "Triggers anomaly alerts", "Internal")
+Rel_Down(deviceService, iotGateway, "Dispatches commands", "MQTT")
+
+' ── IoT Layer ──
+Rel_Down(iotGateway, iotDevices, "Controls devices", "Zigbee / BT / Wi-Fi")
+Rel_Up(iotDevices, iotGateway, "Sends sensor data", "MQTT")
+
+' ── Notifications ──
+Rel(notificationService, pushService, "Forwards alerts", "API")
+
+@enduml

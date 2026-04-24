@@ -1,0 +1,83 @@
+@startuml Activity_5_FamilyMember
+skinparam defaultFontSize 14
+skinparam activityFontSize 14
+skinparam arrowFontSize 13
+skinparam swimlaneBorderThickness 2
+
+title Activity Diagram 5 — Manage Family Members
+
+|Homeowner|
+start
+:Log in to system;
+:Navigate to Household Management;
+:Select Add Family Member;
+:Enter member name, email, and role;
+:Define device access permissions\n(which devices the member can control);
+
+|Mobile / Web App|
+:Validate form inputs;
+if (Form valid?) then (yes)
+    :Send add member request to API Gateway;
+else (no)
+    :Display validation errors;
+    stop
+endif
+
+|API Gateway|
+:Validate Homeowner authentication token;
+:Verify requester has Homeowner role;
+if (Authorized?) then (yes)
+    :Route to User and Preference Service;
+else (no)
+    :Return 403 Forbidden;
+    |Mobile / Web App|
+    :Display permission error;
+    stop
+endif
+
+|User & Preference Service|
+:Check if email already registered in system;
+if (Email exists in system?) then (yes)
+    :Link existing account to household;
+    :Apply assigned permissions;
+else (no)
+    :Create new pending account;
+    :Store assigned role and permissions;
+    :Send invitation email via Notification Service;
+endif
+
+|Notification Service|
+:Dispatch invitation email to new member;
+
+|New Family Member|
+:Receive invitation email;
+if (Accepts invitation?) then (yes)
+    :Click invitation link;
+    :Set account password;
+else (no)
+    :Invitation expires after 48 hours;
+    stop
+endif
+
+|User & Preference Service|
+:Activate family member account;
+:Propagate device permissions\nto Device Management Service;
+
+|Device Management Service|
+:Update access control list\nfor all assigned devices;
+:Store per-member permission records in database;
+
+|Mobile / Web App|
+:Display updated household member list to Homeowner;
+
+|Homeowner|
+:Review and confirm member permissions;
+if (Permissions need adjustment?) then (yes)
+    :Edit member permissions;
+    :Resubmit updated permissions;
+else (no)
+    :Member onboarding complete;
+endif
+stop
+
+@enduml

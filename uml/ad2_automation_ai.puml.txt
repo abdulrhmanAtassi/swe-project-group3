@@ -1,0 +1,62 @@
+@startuml Activity_2_Automation
+skinparam defaultFontSize 14
+skinparam activityFontSize 14
+skinparam arrowFontSize 13
+skinparam swimlaneBorderThickness 2
+
+title Activity Diagram 2 — Automation and AI Trigger Flow
+
+|IoT Gateway|
+start
+:Receive sensor data from physical device\n(e.g. motion detected, temperature spike);
+:Forward event to Device Management Service;
+
+|Device Management Service|
+:Update device state in cache;
+:Persist event to central database;
+:Notify Automation Engine of state change;
+
+|Automation Engine|
+:Evaluate all active automation rules\nagainst new device state;
+if (Matching rule found?) then (yes)
+    :Execute linked actions\n(e.g. turn on lights, lock doors);
+    :Log automation event to database;
+    :Notify Notification Service;
+else (no)
+    :No rule matched — log event;
+endif
+:Send usage event to AI / ML Service;
+
+|AI / ML Service|
+:Analyze event against historical\nbehavior patterns;
+if (Pattern recognized?) then (yes)
+    :Generate automation suggestion\n(e.g. suggest new routine);
+    if (User has auto-apply enabled?) then (yes)
+        :Apply suggestion automatically;
+        :Log new rule to database;
+    else (no)
+        :Send suggestion to Notification Service;
+    endif
+else (no)
+    :Continue learning — no action;
+endif
+
+|Notification Service|
+:Determine notification type\n(confirmation / suggestion / alert);
+:Dispatch push or email notification to user;
+
+|Homeowner / Family Member|
+:Receive notification;
+if (Suggestion received?) then (yes)
+    :Accept or reject automation suggestion;
+    if (Accepted?) then (yes)
+        :Automation Engine saves new rule;
+    else (no)
+        :Discard suggestion;
+    endif
+else (no)
+    :Acknowledge alert or confirmation;
+endif
+stop
+
+@enduml

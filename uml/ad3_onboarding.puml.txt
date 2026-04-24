@@ -1,0 +1,85 @@
+@startuml Activity_3_Onboarding
+skinparam defaultFontSize 14
+skinparam activityFontSize 14
+skinparam arrowFontSize 13
+skinparam swimlaneBorderThickness 2
+
+title Activity Diagram 3 — User Registration and Device Onboarding
+
+|New User|
+start
+:Open mobile or web app;
+:Select Register New Account;
+:Enter name, email, password\nand household role;
+
+|Mobile / Web App|
+:Validate registration form;
+if (Form valid?) then (yes)
+    :Send registration request to API Gateway;
+else (no)
+    :Display validation errors;
+    stop
+endif
+
+|API Gateway|
+:Forward to User and Preference Service;
+
+|User & Preference Service|
+:Check if email already registered;
+if (Email unique?) then (yes)
+    :Create user account;
+    :Assign role\n(Homeowner or Family Member);
+    :Store preferences with defaults;
+    :Send verification email via Notification Service;
+else (no)
+    :Return email already exists error;
+    |Mobile / Web App|
+    :Display error to user;
+    stop
+endif
+
+|New User|
+:Verify email address;
+
+|User & Preference Service|
+:Activate account;
+
+|Homeowner / Family Member|
+:Log in to system;
+:Navigate to Add New Device;
+:Scan device QR code or enter device ID;
+
+|Mobile / Web App|
+:Send device registration request;
+
+|Device Management Service|
+:Validate device ID;
+if (Device ID valid and unregistered?) then (yes)
+    :Register device to household;
+    :Store device configuration in database;
+    :Assign device to requesting user;
+else (no)
+    :Return invalid or already registered error;
+    |Mobile / Web App|
+    :Display error to user;
+    stop
+endif
+
+|IoT Gateway|
+:Establish communication channel\nwith physical device;
+:Perform initial handshake and sync;
+if (Connection successful?) then (yes)
+    :Set device status to Online;
+else (no)
+    :Set device status to Unreachable;
+    :Notify user to check device;
+endif
+
+|Mobile / Web App|
+:Display device successfully added;
+
+|Homeowner / Family Member|
+:Configure device name, room, and preferences;
+stop
+
+@enduml

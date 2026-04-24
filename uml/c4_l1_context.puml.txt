@@ -1,0 +1,30 @@
+@startuml C4_L1_SmartHome
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title C4 Level 1 — System Context Diagram: Smart Home Automation System
+
+Person(homeowner, "Primary Homeowner", "Full-control user. Manages devices, household members, automation routines, and system settings via mobile or web app.")
+Person(familyMember, "Family Member", "Registered household user. Controls permitted devices and manages personal preferences and routines.")
+Person(admin, "System Administrator", "Manages device configurations, user roles, and monitors overall system health.")
+
+System(shas, "Smart Home Automation System", "Integrates and controls smart home devices. Enables remote control, automation routines, real-time monitoring, and AI-driven optimization.")
+
+System_Ext(mobileWeb, "Mobile / Web Application", "Frontend interface used by homeowners and family members to interact with the system.")
+System_Ext(iotDevices, "IoT Devices", "Physical smart devices: thermostats, lighting, security cameras, alarms, and sensors.")
+System_Ext(notificationService, "Notification Service", "Delivers real-time push notifications and email alerts to users.")
+System_Ext(aiModule, "AI / ML Module", "Learns per-user behavior patterns to automate routines and optimize energy usage.")
+System_Ext(authService, "Authentication Service", "Handles user identity verification via OAuth 2.0 or similar protocol.")
+
+Rel(homeowner, mobileWeb, "Uses — full control")
+Rel(familyMember, mobileWeb, "Uses — scoped to personal preferences and permitted devices")
+Rel(admin, shas, "Configures and monitors directly")
+
+Rel(mobileWeb, shas, "Sends commands and receives status updates", "HTTPS/REST")
+Rel(shas, iotDevices, "Sends control signals / receives sensor data", "Wi-Fi / Zigbee / Bluetooth")
+Rel(shas, notificationService, "Triggers alerts and notifications", "API")
+Rel(shas, aiModule, "Sends per-user usage data / receives automation suggestions", "Internal API")
+Rel(shas, authService, "Validates user credentials", "OAuth 2.0")
+
+@enduml
