@@ -1,0 +1,73 @@
+@startuml UseCase_1_Users
+skinparam defaultFontSize 13
+skinparam actorStyle awesome
+skinparam usecaseBorderThickness 2
+skinparam arrowThickness 1.5
+skinparam packageBorderThickness 2
+
+left to right direction
+
+title Use Case Diagram 1 — User Interactions
+
+actor "Homeowner" as HO
+actor "Family Member" as FM
+
+rectangle "Smart Home Automation System" {
+
+    package "Account" {
+        usecase "Register Account" as UC_Register
+        usecase "Log In" as UC_Login
+        usecase "Manage Family Members" as UC_Family
+    }
+
+    package "Devices" {
+        usecase "Add / Remove Device" as UC_Device
+        usecase "Control Device" as UC_Control
+        usecase "View Device Status" as UC_ViewStatus
+    }
+
+    package "Automation" {
+        usecase "Create Automation Rule" as UC_Automate
+    }
+
+    package "Monitoring" {
+        usecase "View System Dashboard" as UC_Dashboard
+        usecase "View Incident History" as UC_History
+        usecase "Receive Notification" as UC_Notify
+    }
+
+    package "Preferences" {
+        usecase "Manage Personal Preferences" as UC_Prefs
+    }
+
+    ' ── Include ──
+    UC_Control ..> UC_Login : <<include>>
+    UC_ViewStatus ..> UC_Login : <<include>>
+    UC_Device ..> UC_Login : <<include>>
+    UC_Family ..> UC_Login : <<include>>
+    UC_Automate ..> UC_Login : <<include>>
+    UC_Dashboard ..> UC_Login : <<include>>
+    UC_Prefs ..> UC_Login : <<include>>
+}
+
+' ── Homeowner ──
+HO -- UC_Register
+HO -- UC_Login
+HO -- UC_Device
+HO -- UC_Family
+HO -- UC_Automate
+HO -- UC_Dashboard
+HO -- UC_History
+HO -- UC_Control
+HO -- UC_ViewStatus
+HO -- UC_Prefs
+HO -- UC_Notify
+
+' ── Family Member ──
+FM -- UC_Login
+FM -- UC_Control
+FM -- UC_ViewStatus
+FM -- UC_Prefs
+FM -- UC_Notify
+
+@enduml

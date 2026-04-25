@@ -1,0 +1,53 @@
+@startuml UseCase_2_System
+skinparam defaultFontSize 13
+skinparam actorStyle awesome
+skinparam usecaseBorderThickness 2
+skinparam arrowThickness 1.5
+skinparam packageBorderThickness 2
+
+left to right direction
+
+title Use Case Diagram 2 — System and Admin Interactions
+
+actor "System Administrator" as SA
+actor "Automation Engine" as AE #lightblue
+actor "AI / ML Service" as AI #lightblue
+
+rectangle "Smart Home Automation System" {
+
+    package "Administration" {
+        usecase "Monitor System Health" as UC_Health
+        usecase "Manage User Accounts" as UC_Users
+        usecase "Manage Device Configurations" as UC_DevConfig
+    }
+
+    package "Automation & AI" {
+        usecase "Execute Automation Rule" as UC_ExecAuto
+        usecase "Create Automation Rule" as UC_Automate
+        usecase "Generate Automation Suggestion" as UC_AISuggest
+        usecase "Trigger Alert" as UC_Alert
+    }
+
+    package "Notifications" {
+        usecase "Dispatch Notification" as UC_Dispatch
+    }
+
+    ' ── Extend ──
+    UC_AISuggest ..> UC_Automate : <<extend>>
+    UC_Alert ..> UC_Dispatch : <<include>>
+    UC_ExecAuto ..> UC_Dispatch : <<include>>
+}
+
+' ── Admin ──
+SA -- UC_Health
+SA -- UC_Users
+SA -- UC_DevConfig
+
+' ── Automation Engine ──
+AE -- UC_ExecAuto
+AE -- UC_Alert
+
+' ── AI ──
+AI -- UC_AISuggest
+
+@enduml
