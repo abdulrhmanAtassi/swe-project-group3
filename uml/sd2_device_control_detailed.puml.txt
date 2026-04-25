@@ -1,0 +1,99 @@
+@startuml Sequence_2_DeviceControl
+skinparam defaultFontSize 12
+skinparam sequenceArrowThickness 1.5
+skinparam sequenceParticipantBorderThickness 2
+skinparam sequenceLifeLineBorderThickness 2
+
+title Sequence Diagram 2 — Device Control Flow (Detailed / Developer View)
+
+actor "Homeowner" as HO
+participant "Mobile App\n(iOS/Android)" as APP
+participant "API Gateway" as GW
+participant "Auth Service\n(OAuth 2.0)" as AUTH
+participant "Device Management\nService" as DMS
+participant "Device State\nCache (Redis)" as CACHE
+participant "Central Database\n(PostgreSQL)" as DB
+participant "IoT Gateway" as IOT
+participant "Physical Device\n(e.g. Smart Light)" as DEV
+participant "Automation\nEngine" as AE
+participant "Notification\nService" as NOTIF
+
+HO -> APP : Tap "Turn Off" on living room light
+activate APP
+
+APP -> GW : POST /api/v1/devices/{deviceId}/command\nBody: { action: "turn_off" }\nHeader: Bearer {JWT_token}
+activate GW
+
+GW -> AUTH : validateToken(JWT_token)
+activate AUTH
+AUTH --> GW : Token valid — userId: U001, role: HOMEOWNER
+deactivate AUTH
+
+GW -> GW : checkPermission(userId: U001,\ndeviceId: D042, action: "turn_off")
+
+alt Permission granted
+    GW -> DMS : routeCommand(deviceId: D042,\nuserId: U001, action: "turn_off")
+    activate DMS
+
+    DMS -> CACHE : GET device:D042:state
+    activate CACHE
+    CACHE --> DMS : { status: "online", currentState: "on" }
+    deactivate CACHE
+
+    alt Device is online
+        DMS -> IOT : dispatchCommand(deviceId: D042,\nprotocol: "Zigbee", command: "turn_off")
+        activate IOT
+
+        IOT -> DEV : Zigbee frame — toggle(OFF)
+        activate DEV
+        DEV --> IOT : ACK — state: "off"
+        deactivate DEV
+
+        IOT --> DMS : CommandResult { success: true, newState: "off" }
+        deactivate IOT
+
+        DMS -> CACHE : SET device:D042:state\n{ status: "online", currentState: "off" }
+        activate CACHE
+        CACHE --> DMS : OK
+        deactivate CACHE
+
+        DMS -> DB : UPDATE devices SET state="off",\nlast_updated=NOW() WHERE device_id="D042"
+        activate DB
+        DB --> DMS : 1 row updated
+        deactivate DB
+
+        DMS -> AE : notifyStateChange(deviceId: D042,\nnewState: "off", userId: U001)
+        activate AE
+        AE -> DB : SELECT rules WHERE trigger_device="D042"\nAND trigger_state="off"
+        DB --> AE : matched_rules[ ]
+        AE -> AE : evaluateAndExecute(matched_rules)
+        deactivate AE
+
+        DMS --> GW : 200 OK { success: true, newState: "off" }
+        deactivate DMS
+
+        GW --> APP : 200 OK { success: true, newState: "off" }
+        deactivate GW
+
+        APP --> HO : Update UI — light shown as OFF
+
+        NOTIF -> NOTIF : buildNotification(userId: U001,\ntype: "COMMAND_SUCCESS",\nmessage: "Living room light turned off")
+        NOTIF -> HO : Push notification delivered
+
+    else Device is offline
+        DMS --> GW : 503 { error: "DEVICE_OFFLINE", deviceId: "D042" }
+        GW --> APP : 503 Device Offline
+        APP --> HO : Display "Device is unreachable"
+
+        DMS -> NOTIF : triggerAlert(userId: U001,\ntype: "DEVICE_OFFLINE", deviceId: "D042")
+        NOTIF -> HO : Push notification — device unreachable
+    end
+
+else Permission denied
+    GW --> APP : 403 Forbidden { error: "PERMISSION_DENIED" }
+    deactivate GW
+    APP --> HO : Display "You do not have permission\nto control this device"
+    deactivate APP
+end
+
+@enduml

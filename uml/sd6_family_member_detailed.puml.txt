@@ -1,0 +1,124 @@
+@startuml Sequence_6_FamilyMember
+skinparam defaultFontSize 12
+skinparam sequenceArrowThickness 1.5
+skinparam sequenceParticipantBorderThickness 2
+skinparam sequenceLifeLineBorderThickness 2
+
+title Sequence Diagram 6 — Manage Family Members (Detailed)
+
+actor "Homeowner" as HO
+participant "Mobile / Web App" as APP
+participant "API Gateway" as GW
+participant "Auth Service\n(OAuth 2.0)" as AUTH
+participant "User & Preference\nService" as UPS
+participant "Device Management\nService" as DMS
+participant "Central Database\n(PostgreSQL)" as DB
+participant "Notification\nService" as NOTIF
+actor "New Family\nMember" as FM
+
+HO -> APP : Navigate to Household Management\nSelect Add Family Member
+activate APP
+
+HO -> APP : Enter member name, email,\nrole, and device permissions
+APP -> APP : Validate form inputs
+
+APP -> GW : POST /api/v1/household/members\nBody: { name, email, role: "FAMILY_MEMBER",\npermissions: ["D042","D021"] }\nHeader: Bearer {JWT_token}
+activate GW
+
+GW -> AUTH : validateToken(JWT_token)
+activate AUTH
+AUTH --> GW : Token valid — userId: U001, role: HOMEOWNER
+deactivate AUTH
+
+GW -> GW : verifyRole(userId: U001, requiredRole: HOMEOWNER)
+
+alt Homeowner confirmed
+    GW -> UPS : addFamilyMember(householdId: "H001",\nname, email, role, permissions)
+    activate UPS
+
+    UPS -> DB : SELECT * FROM users WHERE email="member@email.com"
+    activate DB
+    DB --> UPS : result
+    deactivate DB
+
+    alt Email already registered
+        UPS -> DB : SELECT household_id FROM users\nWHERE email="member@email.com"
+        activate DB
+        DB --> UPS : no existing household
+        deactivate DB
+        UPS -> DB : UPDATE users SET household_id="H001"\nWHERE email="member@email.com"
+        activate DB
+        DB --> UPS : 1 row updated
+        deactivate DB
+    else New user
+        UPS -> DB : INSERT INTO users\n(name, email, role, household_id, is_verified)\nVALUES (data, "H001", false)
+        activate DB
+        DB --> UPS : userId: U008 created
+        deactivate DB
+    end
+
+    UPS -> DB : INSERT INTO member_permissions\n(user_id, device_id, permission_level)\nVALUES ("U008", "D042", "CONTROL"),\n("U008", "D021", "VIEW")
+    activate DB
+    DB --> UPS : 2 rows inserted
+    deactivate DB
+
+    UPS -> DMS : propagatePermissions(userId: "U008",\npermissions: ["D042:CONTROL","D021:VIEW"])
+    activate DMS
+    DMS -> DB : UPDATE device_access_control\nSET allowed_users = allowed_users || "U008"\nWHERE device_id IN ("D042","D021")
+    activate DB
+    DB --> DMS : access control updated
+    deactivate DB
+    DMS --> UPS : 200 OK — permissions propagated
+    deactivate DMS
+
+    UPS -> NOTIF : sendInvitation(email: "member@email.com",\nhouseholdId: "H001",\ninvitationToken: "INV-XYZ")
+    activate NOTIF
+    NOTIF -> FM : Invitation email sent\n"You have been invited to join a household"
+    deactivate NOTIF
+
+    UPS --> GW : 201 Created { memberId: "U008", status: "pending" }
+    deactivate UPS
+    GW --> APP : 201 Created
+    deactivate GW
+    APP --> HO : Display "Invitation sent to member@email.com"
+
+else Not authorized
+    GW --> APP : 403 Forbidden { error: "HOMEOWNER_ROLE_REQUIRED" }
+    deactivate GW
+    APP --> HO : Display "Only the Homeowner can manage members"
+    deactivate APP
+end
+
+== Family Member Accepts Invitation ==
+
+FM -> APP : Click invitation link — open app
+activate APP
+APP -> GW : POST /api/v1/auth/accept-invitation\nBody: { token: "INV-XYZ", password: "newpassword" }
+activate GW
+
+GW -> UPS : acceptInvitation(token: "INV-XYZ", password_hash)
+activate UPS
+UPS -> DB : SELECT * FROM invitations\nWHERE token="INV-XYZ" AND expires_at > NOW()
+activate DB
+DB --> UPS : invitation valid — userId: U008
+deactivate DB
+
+UPS -> DB : UPDATE users SET password_hash, is_verified=true\nWHERE user_id="U008"
+activate DB
+DB --> UPS : 1 row updated
+deactivate DB
+
+UPS -> DB : DELETE FROM invitations WHERE token="INV-XYZ"
+activate DB
+DB --> UPS : 1 row deleted
+deactivate DB
+
+UPS --> GW : 200 OK { userId: "U008", status: "active" }
+deactivate UPS
+GW --> APP : 200 OK
+deactivate GW
+APP --> FM : Display "Welcome! Your account is now active"
+APP --> FM : Redirect to dashboard — show permitted devices only
+deactivate APP
+
+@enduml

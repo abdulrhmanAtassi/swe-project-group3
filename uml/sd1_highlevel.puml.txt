@@ -1,0 +1,48 @@
+@startuml Sequence_1_HighLevel
+skinparam defaultFontSize 13
+skinparam sequenceArrowThickness 2
+skinparam sequenceParticipantBorderThickness 2
+skinparam sequenceLifeLineBorderThickness 2
+
+title Sequence Diagram 1 — Device Control Flow (High-Level / Stakeholder View)
+
+actor "Homeowner" as HO
+participant "Mobile / Web App" as APP
+participant "Smart Home\nAutomation System" as SHAS
+participant "IoT Device" as DEV
+participant "Notification\nService" as NOTIF
+
+HO -> APP : Select device and issue command\n(e.g. turn off living room lights)
+activate APP
+
+APP -> SHAS : Send control request
+activate SHAS
+
+SHAS -> SHAS : Authenticate user and\ncheck permissions
+
+alt Authentication successful
+    SHAS -> DEV : Dispatch control command
+    activate DEV
+
+    alt Device responds successfully
+        DEV --> SHAS : Acknowledge command executed
+        deactivate DEV
+        SHAS --> APP : Return success response
+        APP --> HO : Display updated device status
+        SHAS -> NOTIF : Send confirmation notification
+        NOTIF --> HO : Push notification — command confirmed
+    else Device unreachable
+        SHAS --> APP : Return device offline error
+        APP --> HO : Display device offline message
+        SHAS -> NOTIF : Send anomaly alert
+        NOTIF --> HO : Push notification — device unreachable
+    end
+
+else Authentication failed
+    SHAS --> APP : Return unauthorized error
+    deactivate SHAS
+    APP --> HO : Prompt user to log in again
+    deactivate APP
+end
+
+@enduml

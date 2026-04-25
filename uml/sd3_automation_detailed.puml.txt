@@ -1,0 +1,101 @@
+@startuml Sequence_3_Automation
+skinparam defaultFontSize 12
+skinparam sequenceArrowThickness 1.5
+skinparam sequenceParticipantBorderThickness 2
+skinparam sequenceLifeLineBorderThickness 2
+
+title Sequence Diagram 3 — Automation and AI Trigger Flow (Detailed)
+
+participant "IoT Device\n(Sensor)" as DEV
+participant "IoT Gateway" as IOT
+participant "Device Management\nService" as DMS
+participant "Device State\nCache (Redis)" as CACHE
+participant "Central Database\n(PostgreSQL)" as DB
+participant "Automation\nEngine" as AE
+participant "AI / ML\nService" as AI
+participant "Notification\nService" as NOTIF
+actor "Homeowner" as HO
+
+DEV -> IOT : MQTT publish — sensor_event\n{ deviceId: "D021", type: "motion_detected",\nvalue: true, timestamp: now() }
+activate IOT
+
+IOT -> DMS : forwardSensorEvent(deviceId: "D021",\nevent: "motion_detected", value: true)
+activate DMS
+
+DMS -> CACHE : SET device:D021:state\n{ status: "online", lastEvent: "motion_detected" }
+activate CACHE
+CACHE --> DMS : OK
+deactivate CACHE
+
+DMS -> DB : INSERT INTO device_events\n(device_id, event_type, value, timestamp)\nVALUES ("D021", "motion_detected", true, NOW())
+activate DB
+DB --> DMS : 1 row inserted
+deactivate DB
+
+DMS -> AE : notifyStateChange(deviceId: "D021",\nevent: "motion_detected", value: true)
+deactivate DMS
+activate AE
+
+AE -> DB : SELECT * FROM automation_rules\nWHERE trigger_device="D021"\nAND trigger_event="motion_detected"\nAND is_active=true
+DB --> AE : matched_rules[ rule_id: R005,\naction: "turn_on", target: "D042" ]
+
+alt Matching rule found
+    AE -> DMS : dispatchAction(ruleId: "R005",\ntargetDevice: "D042", action: "turn_on")
+    activate DMS
+    DMS --> AE : 200 OK — action dispatched
+    deactivate DMS
+
+    AE -> DB : INSERT INTO automation_logs\n(rule_id, trigger_event, action, timestamp)\nVALUES ("R005", "motion_detected", "turn_on", NOW())
+    DB --> AE : 1 row inserted
+
+    AE -> NOTIF : sendNotification(userId: "U001",\ntype: "AUTOMATION_EXECUTED",\nmessage: "Motion detected — lights turned on")
+    activate NOTIF
+    NOTIF -> HO : Push notification delivered
+    deactivate NOTIF
+
+else No matching rule
+    AE -> DB : INSERT INTO automation_logs\n(trigger_event, action, timestamp)\nVALUES ("motion_detected", "no_match", NOW())
+    DB --> AE : 1 row inserted
+end
+
+AE -> AI : sendUsageEvent(deviceId: "D021",\nevent: "motion_detected",\ntimestamp: NOW(), userId: "U001")
+deactivate AE
+activate AI
+
+AI -> DB : SELECT * FROM device_events\nWHERE device_id="D021" AND user_id="U001"\nORDER BY timestamp DESC LIMIT 1000
+DB --> AI : usage_history[ ]
+
+AI -> AI : analyzePatterns(usage_history)
+
+alt Pattern recognized
+    AI -> AI : generateSuggestion(pattern)
+
+    alt Auto-apply enabled
+        AI -> AE : submitRule(suggestion)
+        activate AE
+        AE -> DB : INSERT INTO automation_rules\n(trigger_device, trigger_event, action, source)\nVALUES ("D021", "motion_detected", "turn_on", "AI_SUGGESTION")
+        DB --> AE : 1 row inserted
+        deactivate AE
+    else Manual review required
+        AI -> NOTIF : sendSuggestion(userId: "U001",\ntype: "AI_SUGGESTION",\nmessage: "Suggested new automation rule")
+        activate NOTIF
+        NOTIF -> HO : Push notification — suggestion received
+        deactivate NOTIF
+
+        HO -> NOTIF : acceptSuggestion(suggestionId: "S009")
+        NOTIF -> AE : submitAcceptedRule(suggestionId: "S009")
+        activate AE
+        AE -> DB : INSERT INTO automation_rules VALUES (suggestion data)
+        DB --> AE : 1 row inserted
+        deactivate AE
+    end
+
+else No pattern detected
+    AI -> DB : UPDATE ai_analysis_log\nSET result="insufficient_pattern"\nWHERE analysis_id=LAST_INSERT_ID()
+    DB --> AI : 1 row updated
+end
+
+deactivate AI
+deactivate IOT
+
+@enduml

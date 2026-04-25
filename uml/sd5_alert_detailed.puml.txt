@@ -1,0 +1,136 @@
+@startuml Sequence_5_Alert
+skinparam defaultFontSize 12
+skinparam sequenceArrowThickness 1.5
+skinparam sequenceParticipantBorderThickness 2
+skinparam sequenceLifeLineBorderThickness 2
+
+title Sequence Diagram 5 — Alert and Incident Response Flow (Detailed)
+
+participant "IoT Device\n(Sensor)" as DEV
+participant "IoT Gateway" as IOT
+participant "Device Management\nService" as DMS
+participant "Device State\nCache (Redis)" as CACHE
+participant "Central Database\n(PostgreSQL)" as DB
+participant "Automation\nEngine" as AE
+participant "Notification\nService" as NOTIF
+participant "AI / ML\nService" as AI
+actor "Homeowner" as HO
+
+DEV -> IOT : MQTT publish — anomaly_event\n{ deviceId: "D055", type: "smoke_detected",\nvalue: true, severity: "HIGH", timestamp: now() }
+activate IOT
+
+IOT -> IOT : classifySeverity(event) → severity: HIGH
+
+IOT -> DMS : forwardAnomalyEvent(deviceId: "D055",\ntype: "smoke_detected", severity: "HIGH")
+activate DMS
+
+DMS -> CACHE : SET device:D055:state\n{ status: "alert", event: "smoke_detected", severity: "HIGH" }
+activate CACHE
+CACHE --> DMS : OK
+deactivate CACHE
+
+DMS -> DB : INSERT INTO incidents\n(device_id, type, severity, status, timestamp)\nVALUES ("D055", "smoke_detected", "HIGH", "open", NOW())
+activate DB
+DB --> DMS : incidentId: INC-0042 created
+deactivate DB
+
+DMS -> AE : escalateIncident(incidentId: "INC-0042",\ndeviceId: "D055", type: "smoke_detected", severity: "HIGH")
+deactivate DMS
+activate AE
+
+AE -> DB : SELECT * FROM emergency_rules\nWHERE trigger_type="smoke_detected"\nAND severity="HIGH" AND is_active=true
+activate DB
+DB --> AE : emergency_rules[\n  { action: "unlock_doors", target: "D010" },\n  { action: "turn_off_hvac", target: "D031" }\n]
+deactivate DB
+
+alt Emergency rules matched
+    AE -> DMS : dispatchEmergencyAction(target: "D010", action: "unlock_doors")
+    activate DMS
+    DMS --> AE : 200 OK — doors unlocked
+    deactivate DMS
+
+    AE -> DMS : dispatchEmergencyAction(target: "D031", action: "turn_off_hvac")
+    activate DMS
+    DMS --> AE : 200 OK — HVAC off
+    deactivate DMS
+
+    AE -> DB : INSERT INTO automation_logs\n(incident_id, actions_taken, timestamp)\nVALUES ("INC-0042", ["unlock_doors","turn_off_hvac"], NOW())
+    activate DB
+    DB --> AE : 1 row inserted
+    deactivate DB
+
+else No emergency rules matched
+    AE -> DB : UPDATE incidents SET status="pending_user_action"\nWHERE incident_id="INC-0042"
+    activate DB
+    DB --> AE : 1 row updated
+    deactivate DB
+end
+
+AE -> NOTIF : triggerHighPriorityAlert(userId: "U001",\nincidentId: "INC-0042", type: "SMOKE_DETECTED",\nmessage: "Smoke detected in Kitchen")
+deactivate AE
+activate NOTIF
+NOTIF -> HO : Push notification — HIGH PRIORITY
+NOTIF -> HO : Email alert dispatched
+deactivate NOTIF
+
+HO -> APP : Open app — review incident details
+activate APP
+APP -> GW : GET /api/v1/incidents/INC-0042
+activate GW
+GW -> DB : SELECT * FROM incidents JOIN incident_actions\nWHERE incident_id="INC-0042"
+activate DB
+DB --> GW : incident details + actions taken
+deactivate DB
+GW --> APP : 200 OK — incident details
+deactivate GW
+APP --> HO : Display incident report and camera feed
+
+alt False alarm
+    HO -> APP : Mark as false alarm
+    APP -> GW : PATCH /api/v1/incidents/INC-0042\nBody: { status: "false_alarm" }
+    activate GW
+    GW -> DB : UPDATE incidents SET status="false_alarm"\nWHERE incident_id="INC-0042"
+    activate DB
+    DB --> GW : 1 row updated
+    deactivate DB
+    GW --> APP : 200 OK
+    deactivate GW
+    APP --> HO : Incident marked as false alarm
+
+    GW -> AI : reportFalseAlarm(incidentId: "INC-0042", deviceId: "D055")
+    activate AI
+    AI -> DB : UPDATE anomaly_thresholds\nSET false_alarm_count = false_alarm_count + 1\nWHERE device_id="D055"
+    activate DB
+    DB --> AI : threshold updated
+    deactivate DB
+    AI -> AI : recalibrateDetectionThreshold(deviceId: "D055")
+    deactivate AI
+
+else Real incident
+    HO -> APP : Issue manual commands (e.g. lock all doors)
+    APP -> GW : POST /api/v1/devices/command\nBody: { action: "lock_all_doors", scope: "household" }
+    activate GW
+    GW -> DMS : dispatchCommand(action: "lock_all_doors", scope: "household")
+    activate DMS
+    DMS --> GW : 200 OK — commands dispatched
+    deactivate DMS
+    GW --> APP : 200 OK
+    deactivate GW
+    APP --> HO : Display "All doors locked"
+
+    HO -> APP : Mark incident as resolved
+    APP -> GW : PATCH /api/v1/incidents/INC-0042\nBody: { status: "resolved" }
+    activate GW
+    GW -> DB : UPDATE incidents SET status="resolved",\nresolved_at=NOW() WHERE incident_id="INC-0042"
+    activate DB
+    DB --> GW : 1 row updated
+    deactivate DB
+    GW --> APP : 200 OK
+    deactivate GW
+    APP --> HO : Incident marked as resolved
+    deactivate APP
+end
+
+deactivate IOT
+
+@enduml

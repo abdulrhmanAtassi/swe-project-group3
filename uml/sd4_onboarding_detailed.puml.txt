@@ -1,0 +1,159 @@
+@startuml Sequence_4_Onboarding
+skinparam defaultFontSize 12
+skinparam sequenceArrowThickness 1.5
+skinparam sequenceParticipantBorderThickness 2
+skinparam sequenceLifeLineBorderThickness 2
+
+title Sequence Diagram 4 — User Registration and Device Onboarding (Detailed)
+
+actor "New User" as NU
+participant "Mobile / Web App" as APP
+participant "API Gateway" as GW
+participant "Auth Service\n(OAuth 2.0)" as AUTH
+participant "User & Preference\nService" as UPS
+participant "Central Database\n(PostgreSQL)" as DB
+participant "Notification\nService" as NOTIF
+participant "Device Management\nService" as DMS
+participant "IoT Gateway" as IOT
+participant "Physical Device" as DEV
+
+== User Registration ==
+
+NU -> APP : Fill registration form\n{ name, email, password, role: "HOMEOWNER" }
+activate APP
+APP -> APP : Validate form fields\n(email format, password strength)
+
+alt Form valid
+    APP -> GW : POST /api/v1/auth/register\nBody: { name, email, password_hash, role }
+    activate GW
+
+    GW -> UPS : createUser(name, email, password_hash, role)
+    activate UPS
+
+    UPS -> DB : SELECT * FROM users WHERE email="user@email.com"
+    activate DB
+    DB --> UPS : 0 rows — email available
+    deactivate DB
+
+    UPS -> DB : INSERT INTO users\n(name, email, password_hash, role, is_verified)\nVALUES (data, false)
+    activate DB
+    DB --> UPS : userId: U007 created
+    deactivate DB
+
+    UPS -> DB : INSERT INTO user_preferences\n(user_id, preferences)\nVALUES ("U007", default_preferences)
+    activate DB
+    DB --> UPS : 1 row inserted
+    deactivate DB
+
+    UPS -> NOTIF : sendVerificationEmail(userId: "U007", email: "user@email.com")
+    activate NOTIF
+    NOTIF -> NU : Verification email sent
+    deactivate NOTIF
+
+    UPS --> GW : 201 Created { userId: "U007", status: "pending_verification" }
+    deactivate UPS
+    GW --> APP : 201 Created
+    deactivate GW
+    APP --> NU : Display "Check your email to verify account"
+
+else Form invalid
+    APP --> NU : Display validation errors
+    deactivate APP
+end
+
+NU -> APP : Click verification link in email
+activate APP
+APP -> GW : GET /api/v1/auth/verify?token={verifyToken}
+activate GW
+GW -> UPS : verifyAccount(token: verifyToken)
+activate UPS
+UPS -> DB : UPDATE users SET is_verified=true\nWHERE verification_token=verifyToken
+activate DB
+DB --> UPS : 1 row updated
+deactivate DB
+UPS --> GW : 200 OK — account verified
+deactivate UPS
+GW --> APP : 200 OK
+deactivate GW
+APP --> NU : Display "Account verified — please log in"
+deactivate APP
+
+== Device Onboarding ==
+
+NU -> APP : Log in and navigate to Add Device
+activate APP
+APP -> GW : POST /api/v1/devices/register\nBody: { deviceId: "D099", userId: "U007" }
+activate GW
+
+GW -> AUTH : validateToken(JWT_token)
+activate AUTH
+AUTH --> GW : Token valid — userId: U007
+deactivate AUTH
+
+GW -> DMS : registerDevice(deviceId: "D099", userId: "U007")
+activate DMS
+
+DMS -> DB : SELECT * FROM devices WHERE device_id="D099"
+activate DB
+DB --> DMS : 0 rows — device not registered
+deactivate DB
+
+DMS -> DB : INSERT INTO devices\n(device_id, owner_id, status)\nVALUES ("D099", "U007", "initializing")
+activate DB
+DB --> DMS : 1 row inserted
+deactivate DB
+
+DMS -> IOT : initiateHandshake(deviceId: "D099")
+activate IOT
+IOT -> DEV : Broadcast discovery ping (Zigbee / BT / Wi-Fi)
+activate DEV
+
+alt Device responds
+    DEV --> IOT : Discovery response\n{ deviceId: "D099", protocol: "Zigbee", firmware: "v2.1.4" }
+    IOT -> DEV : Sync configuration { household_id: "H001", timezone: "UTC+3" }
+    DEV --> IOT : Configuration accepted
+    IOT --> DMS : HandshakeResult { success: true, protocol: "Zigbee", firmware: "v2.1.4" }
+    deactivate DEV
+
+    DMS -> DB : UPDATE devices SET status="online",\nprotocol="Zigbee", firmware="v2.1.4"\nWHERE device_id="D099"
+    activate DB
+    DB --> DMS : 1 row updated
+    deactivate DB
+
+    DMS --> GW : 200 OK { deviceId: "D099", status: "online" }
+    deactivate DMS
+    GW --> APP : 200 OK
+    deactivate GW
+    APP --> NU : Display "Device added successfully"
+
+    NU -> APP : Set device name: "Living Room Light", room: "Living Room"
+    APP -> GW : PATCH /api/v1/devices/D099\nBody: { name: "Living Room Light", room: "Living Room" }
+    activate GW
+    GW -> DMS : updateDeviceConfig(deviceId: "D099", name, room)
+    activate DMS
+    DMS -> DB : UPDATE devices SET name, room WHERE device_id="D099"
+    activate DB
+    DB --> DMS : 1 row updated
+    deactivate DB
+    DMS --> GW : 200 OK
+    deactivate DMS
+    GW --> APP : 200 OK
+    deactivate GW
+    APP --> NU : Display device in dashboard
+
+else Device unreachable
+    IOT --> DMS : HandshakeResult { success: false, error: "DEVICE_UNREACHABLE" }
+    deactivate IOT
+    DMS -> DB : UPDATE devices SET status="unreachable"\nWHERE device_id="D099"
+    activate DB
+    DB --> DMS : 1 row updated
+    deactivate DB
+    DMS --> GW : 503 { error: "DEVICE_UNREACHABLE" }
+    deactivate DMS
+    GW --> APP : 503 Device Unreachable
+    deactivate GW
+    APP --> NU : Display "Device not found — check power and proximity"
+    deactivate APP
+end
+
+@enduml

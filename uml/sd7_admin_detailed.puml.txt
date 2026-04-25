@@ -1,0 +1,146 @@
+@startuml Sequence_7_AdminMonitoring
+skinparam defaultFontSize 12
+skinparam sequenceArrowThickness 1.5
+skinparam sequenceParticipantBorderThickness 2
+skinparam sequenceLifeLineBorderThickness 2
+
+title Sequence Diagram 7 — System Administrator Monitoring and Configuration (Detailed)
+
+actor "System\nAdministrator" as SA
+participant "Web Application" as APP
+participant "API Gateway" as GW
+participant "Auth Service\n(OAuth 2.0)" as AUTH
+participant "Device Management\nService" as DMS
+participant "User & Preference\nService" as UPS
+participant "Automation\nEngine" as AE
+participant "Central Database\n(PostgreSQL)" as DB
+participant "Notification\nService" as NOTIF
+
+SA -> APP : Log in with admin credentials
+activate APP
+
+APP -> GW : POST /api/v1/auth/login\nBody: { email, password_hash }
+activate GW
+GW -> AUTH : validateCredentials(email, password_hash)
+activate AUTH
+AUTH --> GW : 200 OK — JWT { userId: "A001", role: "ADMIN" }
+deactivate AUTH
+GW --> APP : 200 OK — JWT token issued
+deactivate GW
+
+APP --> SA : Redirect to admin dashboard
+
+SA -> APP : Request system health overview
+APP -> GW : GET /api/v1/admin/system-health\nHeader: Bearer {JWT_token}
+activate GW
+
+GW -> AUTH : validateToken(JWT_token)
+activate AUTH
+AUTH --> GW : Token valid — role: ADMIN
+deactivate AUTH
+
+GW -> DMS : getDeviceHealthReport()
+activate DMS
+DMS -> DB : SELECT COUNT(*) as total,\nSUM(CASE WHEN status="online" THEN 1 END) as online,\nSUM(CASE WHEN status="offline" THEN 1 END) as offline\nFROM devices
+activate DB
+DB --> DMS : { total: 42, online: 38, offline: 4 }
+deactivate DB
+DMS --> GW : DeviceReport { total: 42, online: 38, offline: 4 }
+deactivate DMS
+
+GW -> UPS : getUserActivityReport()
+activate UPS
+UPS -> DB : SELECT COUNT(*) as total_users,\nCOUNT(DISTINCT household_id) as households,\nSUM(CASE WHEN last_login > NOW()-INTERVAL 7 DAY\nTHEN 1 END) as active_7days\nFROM users
+activate DB
+DB --> UPS : { total_users: 156, households: 47, active_7days: 89 }
+deactivate DB
+UPS --> GW : UserReport { total_users: 156, households: 47, active_7days: 89 }
+deactivate UPS
+
+GW -> AE : getAutomationReport()
+activate AE
+AE -> DB : SELECT COUNT(*) as active_rules,\nCOUNT(*) as executions_today\nFROM automation_rules r\nLEFT JOIN automation_logs l\nON r.rule_id=l.rule_id\nWHERE l.timestamp > CURDATE()
+activate DB
+DB --> AE : { active_rules: 318, executions_today: 1247 }
+deactivate DB
+AE --> GW : AutomationReport { active_rules: 318, executions_today: 1247 }
+deactivate AE
+
+GW --> APP : 200 OK — AggregatedSystemReport
+deactivate GW
+APP --> SA : Render system dashboard\n(device health + user stats + automation stats)
+
+alt Issue detected — offline devices
+    SA -> APP : Select offline device D015
+    APP -> GW : GET /api/v1/admin/devices/D015/diagnostics\nHeader: Bearer {JWT_token}
+    activate GW
+    GW -> DMS : getDeviceDiagnostics(deviceId: "D015")
+    activate DMS
+    DMS -> DB : SELECT * FROM devices\nJOIN device_events ON devices.device_id=device_events.device_id\nWHERE devices.device_id="D015"\nORDER BY timestamp DESC LIMIT 50
+    activate DB
+    DB --> DMS : device record + last 50 events
+    deactivate DB
+    DMS --> GW : DiagnosticsReport { lastSeen: "2h ago", lastEvent: "connection_lost" }
+    deactivate DMS
+    GW --> APP : 200 OK — diagnostics
+    deactivate GW
+    APP --> SA : Display device diagnostics
+
+    SA -> APP : Force remove orphaned device D015
+    APP -> GW : DELETE /api/v1/admin/devices/D015\nHeader: Bearer {JWT_token}
+    activate GW
+    GW -> DMS : removeDevice(deviceId: "D015", adminId: "A001")
+    activate DMS
+    DMS -> DB : UPDATE devices SET status="removed",\nremoved_by="A001", removed_at=NOW()\nWHERE device_id="D015"
+    activate DB
+    DB --> DMS : 1 row updated
+    deactivate DB
+    DMS -> AE : disableRulesForDevice(deviceId: "D015")
+    activate AE
+    AE -> DB : UPDATE automation_rules SET is_active=false\nWHERE trigger_device="D015" OR target_device="D015"
+    activate DB
+    DB --> AE : N rows updated
+    deactivate DB
+    deactivate AE
+    DMS --> GW : 200 OK — device removed
+    deactivate DMS
+    GW --> APP : 200 OK
+    deactivate GW
+    APP --> SA : Display "Device D015 removed successfully"
+
+else Issue detected — suspicious user activity
+    SA -> APP : Select user account U099
+    APP -> GW : PATCH /api/v1/admin/users/U099\nBody: { action: "deactivate" }\nHeader: Bearer {JWT_token}
+    activate GW
+    GW -> UPS : deactivateUser(userId: "U099", adminId: "A001")
+    activate UPS
+    UPS -> DB : UPDATE users SET is_active=false,\ndeactivated_by="A001", deactivated_at=NOW()\nWHERE user_id="U099"
+    activate DB
+    DB --> UPS : 1 row updated
+    deactivate DB
+    UPS -> NOTIF : sendAccountNotification(userId: "U099",\ntype: "ACCOUNT_DEACTIVATED")
+    activate NOTIF
+    NOTIF -> SA : Confirmation — account deactivated
+    deactivate NOTIF
+    UPS --> GW : 200 OK — user deactivated
+    deactivate UPS
+    GW --> APP : 200 OK
+    deactivate GW
+    APP --> SA : Display "User U099 deactivated"
+
+else No issues detected
+    SA -> APP : Export system report
+    APP -> GW : GET /api/v1/admin/reports/export?format=pdf
+    activate GW
+    GW -> DB : SELECT aggregated system metrics
+    activate DB
+    DB --> GW : full metrics dataset
+    deactivate DB
+    GW --> APP : 200 OK — report file stream
+    deactivate GW
+    APP --> SA : Download system report PDF
+end
+
+deactivate APP
+
+@enduml
