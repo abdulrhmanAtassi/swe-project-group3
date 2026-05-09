@@ -1,0 +1,313 @@
+@startuml ClassDiagram_SmartHome
+skinparam defaultFontSize 13
+skinparam classAttributeIconSize 0
+skinparam classBorderThickness 2
+skinparam arrowThickness 1.5
+skinparam linetype ortho
+
+title Class Diagram — Smart Home Automation System
+
+' ── User Hierarchy ──
+abstract class User {
+    - userId: String
+    - name: String
+    - email: String
+    - passwordHash: String
+    - isVerified: Boolean
+    - createdAt: DateTime
+    + login(): Boolean
+    + logout(): void
+    + updateProfile(): void
+    + receiveNotification(): void
+}
+
+class Homeowner {
+    - householdId: String
+    + addDevice(): void
+    + removeDevice(): void
+    + addFamilyMember(): void
+    + removeFamilyMember(): void
+    + createAutomationRule(): void
+    + viewSystemDashboard(): void
+    + viewIncidentHistory(): void
+    + managePreferences(): void
+}
+
+class FamilyMember {
+    - householdId: String
+    - permittedDevices: List<String>
+    + controlDevice(): void
+    + viewDeviceStatus(): void
+    + managePreferences(): void
+}
+
+class Administrator {
+    - adminLevel: Integer
+    + monitorSystemHealth(): void
+    + manageUserAccounts(): void
+    + manageDeviceConfigurations(): void
+    + exportSystemReport(): void
+    + deactivateUser(): void
+}
+
+' ── Household ──
+class Household {
+    - householdId: String
+    - name: String
+    - timezone: String
+    - createdAt: DateTime
+    + addMember(): void
+    + removeMember(): void
+    + addDevice(): void
+    + removeDevice(): void
+    + getMembers(): List<User>
+    + getDevices(): List<Device>
+}
+
+' ── Device ──
+class Device {
+    - deviceId: String
+    - name: String
+    - room: String
+    - type: DeviceType
+    - protocol: String
+    - firmware: String
+    - status: DeviceStatus
+    - registeredAt: DateTime
+    + turnOn(): void
+    + turnOff(): void
+    + getStatus(): DeviceStatus
+    + updateFirmware(): void
+    + sendCommand(): void
+}
+
+enum DeviceType {
+    THERMOSTAT
+    LIGHT
+    CAMERA
+    ALARM
+    DOOR_LOCK
+    SENSOR
+    HVAC
+}
+
+enum DeviceStatus {
+    ONLINE
+    OFFLINE
+    UNREACHABLE
+    ALERT
+    INITIALIZING
+}
+
+' ── Device State ──
+class DeviceState {
+    - stateId: String
+    - deviceId: String
+    - currentState: String
+    - previousState: String
+    - timestamp: DateTime
+    - triggeredBy: String
+    + getLatestState(): String
+    + getStateHistory(): List<DeviceState>
+}
+
+' ── Permission ──
+class Permission {
+    - permissionId: String
+    - userId: String
+    - deviceId: String
+    - permissionLevel: PermissionLevel
+    - grantedAt: DateTime
+    + grant(): void
+    + revoke(): void
+    + check(): Boolean
+}
+
+enum PermissionLevel {
+    CONTROL
+    VIEW
+    NONE
+}
+
+' ── Automation ──
+class AutomationRule {
+    - ruleId: String
+    - name: String
+    - triggerDeviceId: String
+    - triggerEvent: String
+    - targetDeviceId: String
+    - action: String
+    - isActive: Boolean
+    - source: RuleSource
+    - createdAt: DateTime
+    + activate(): void
+    + deactivate(): void
+    + evaluate(): Boolean
+    + execute(): void
+}
+
+enum RuleSource {
+    USER_DEFINED
+    AI_SUGGESTION
+}
+
+class AutomationLog {
+    - logId: String
+    - ruleId: String
+    - triggerEvent: String
+    - actionTaken: String
+    - success: Boolean
+    - timestamp: DateTime
+    + getLogDetails(): String
+}
+
+' ── AI ──
+class AIModel {
+    - modelId: String
+    - version: String
+    - lastTrainedAt: DateTime
+    - accuracyScore: Float
+    + analyzePatterns(): void
+    + generateSuggestion(): AISuggestion
+    + recalibrateThreshold(): void
+    + incorporateFeedback(): void
+}
+
+class AISuggestion {
+    - suggestionId: String
+    - userId: String
+    - triggerDeviceId: String
+    - triggerEvent: String
+    - suggestedAction: String
+    - status: SuggestionStatus
+    - createdAt: DateTime
+    + accept(): AutomationRule
+    + reject(): void
+    + isExpired(): Boolean
+}
+
+enum SuggestionStatus {
+    PENDING
+    ACCEPTED
+    REJECTED
+    EXPIRED
+}
+
+' ── Incident ──
+class Incident {
+    - incidentId: String
+    - deviceId: String
+    - type: String
+    - severity: Severity
+    - status: IncidentStatus
+    - createdAt: DateTime
+    - resolvedAt: DateTime
+    + escalate(): void
+    + resolve(): void
+    + markFalseAlarm(): void
+    + generateReport(): String
+}
+
+enum Severity {
+    LOW
+    MEDIUM
+    HIGH
+}
+
+enum IncidentStatus {
+    OPEN
+    PENDING_USER_ACTION
+    RESOLVED
+    FALSE_ALARM
+}
+
+' ── Notification ──
+class Notification {
+    - notificationId: String
+    - userId: String
+    - type: NotificationType
+    - message: String
+    - isRead: Boolean
+    - sentAt: DateTime
+    + send(): void
+    + markAsRead(): void
+}
+
+enum NotificationType {
+    COMMAND_SUCCESS
+    DEVICE_OFFLINE
+    AUTOMATION_EXECUTED
+    ALERT
+    AI_SUGGESTION
+    ACCOUNT_INVITATION
+}
+
+' ── Preference ──
+class Preference {
+    - preferenceId: String
+    - userId: String
+    - defaultTemperature: Float
+    - defaultLightingScene: String
+    - notificationsEnabled: Boolean
+    - autoApplyAI: Boolean
+    - updatedAt: DateTime
+    + update(): void
+    + resetToDefaults(): void
+}
+
+' ── Invitation ──
+class Invitation {
+    - invitationId: String
+    - email: String
+    - householdId: String
+    - token: String
+    - role: String
+    - expiresAt: DateTime
+    - isAccepted: Boolean
+    + send(): void
+    + accept(): void
+    + expire(): void
+    + isValid(): Boolean
+}
+
+' ══════════════════════════════
+' RELATIONSHIPS
+' ══════════════════════════════
+
+' ── Generalization (Inheritance) ──
+User <|-- Homeowner
+User <|-- FamilyMember
+User <|-- Administrator
+
+' ── Composition ──
+Household *-- Device : contains
+User *-- Preference : has
+Device *-- DeviceState : tracks
+AutomationRule *-- AutomationLog : logs
+FamilyMember *-- Permission : has
+
+' ── Aggregation ──
+Household o-- User : members
+
+' ── Associations ──
+Permission --> Device : scoped to
+AutomationRule --> Device : targets
+AutomationRule -- RuleSource
+Device -- DeviceType
+Device -- DeviceStatus
+
+AIModel --> AISuggestion : generates
+AISuggestion --> AutomationRule : becomes on accept
+AISuggestion -- SuggestionStatus
+
+Incident --> Device : triggered by
+Incident -- Severity
+Incident -- IncidentStatus
+
+Notification --> User : sent to
+Notification -- NotificationType
+
+Homeowner --> Invitation : sends
+Invitation --> FamilyMember : creates
+
+@enduml
