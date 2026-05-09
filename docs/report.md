@@ -1,3 +1,8 @@
+---
+title: "Software Engineering Project Report"
+author: "Group 03"
+---
+
 # Software Engineering Project Report
 ## Smart Home Automation System — Group 03
 
