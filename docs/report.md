@@ -1,12 +1,12 @@
----
+***
 title: "Software Engineering Project Report"
 author: "Group 03"
----
+***
 
 # Software Engineering Project Report
 ## Smart Home Automation System — Group 03
 
----
+***
 ## 1. Group Info
 
 | Field | Details |
@@ -25,7 +25,7 @@ author: "Group 03"
 | Osama Zaid | *20220099* |
 | Mariam Laith | *20220872* |
 
----
+***
 
 ## 2. Overview
 
@@ -41,7 +41,7 @@ The Smart Home Automation System is an IoT-based platform designed to integrate 
 | Visual Studio Code | Report and source file editing |
 | GitHub | Version control and collaboration |
 
----
+***
 
 ## 3. Diagrams
  
@@ -86,7 +86,7 @@ The Smart Home Automation System is an IoT-based platform designed to integrate 
 | DFD0 | DFD Level 0 — Context | `uml/dfd_l0_context.puml` | System-level data flow context showing external entities and data in/out |
 | DFD1 | DFD Level 1 — Data Pipeline | `uml/dfd_l1_pipeline.puml` | Detailed data management pipeline covering user data, device data, AI learning, and reporting |
  
----
+***
  
 ## 4. Repository Structure
  
@@ -120,7 +120,7 @@ The Smart Home Automation System is an IoT-based platform designed to integrate 
     └── dfd_l1_pipeline.puml              # DFD Level 1 — Data Pipeline
 ```
  
----
+***
  
 ## 5. Contributions
  
@@ -144,7 +144,7 @@ The Smart Home Automation System is an IoT-based platform designed to integrate 
 
 
 
----
+***
 
 ## Table of Contents
 
@@ -165,7 +165,7 @@ The Smart Home Automation System is an IoT-based platform designed to integrate 
 6. Design Decisions and Assumptions
 7. Traceability Matrix
 
----
+***
 
 ## 1. System Description
 
@@ -177,7 +177,7 @@ The system maintains a central database containing device configurations, user a
 
 The system is designed around four core operational flows: device control initiated by human actors, autonomous automation triggered by sensor events, user and device onboarding, and safety-critical incident detection and response. Each flow is fully modeled across all UML layers in this report.
 
----
+***
 
 ## 2. Part I — Context
 
@@ -205,7 +205,7 @@ The C4 Level 1 diagram presents the Smart Home Automation System as a single bla
 
 ![C4 Level 1 — System Context Diagram](../uml/c4_l1_context.png)
 
----
+***
 
 ### 2.2 C4 Level 2: Container Diagram
 
@@ -231,7 +231,7 @@ The C4 Level 2 diagram opens the black box and reveals the major deployable comp
 
 ![C4 Level 2 — Container Diagram](../uml/c4_l2_container.png)
 
----
+***
 
 ### 2.3 Activity Diagrams
 
@@ -247,7 +247,7 @@ Models the primary real-time flow when a user issues a device control command. C
 
 ![Activity Diagram 1 — Device Control Flow](../uml/ad1_device_control.png)
 
----
+***
 
 #### Activity Diagram 2 — Automation and AI Trigger Flow
 
@@ -259,7 +259,7 @@ Models the background intelligence layer initiated by a sensor event rather than
 
 ![Activity Diagram 2 — Automation and AI Trigger Flow](../uml/ad2_automation_ai.png)
 
----
+***
 
 #### Activity Diagram 3 — User Registration and Device Onboarding
 
@@ -271,7 +271,7 @@ Models the system setup phase covering account creation, email verification, and
 
 ![Activity Diagram 3 — User Registration and Device Onboarding](../uml/ad3_onboarding.png)
 
----
+***
 
 #### Activity Diagram 4 — Alert and Incident Response Flow
 
@@ -283,7 +283,7 @@ Models the safety-critical path covering anomaly detection from a physical senso
 
 ![Activity Diagram 4 — Alert and Incident Response Flow](../uml/ad4_alert_response.png)
 
----
+***
 
 #### Activity Diagram 5 — Manage Family Members
 
@@ -295,7 +295,7 @@ Models the Homeowner's flow for adding a Family Member. This flow is architectur
 
 ![Activity Diagram 5 — Manage Family Members](../uml/ad5_manage_family.png)
 
----
+***
 
 #### Activity Diagram 6 — System Administrator Monitoring and Configuration
 
@@ -307,7 +307,7 @@ Models the System Administrator's interaction pattern — no IoT layer involved,
 
 ![Activity Diagram 6 — System Administrator Monitoring](../uml/ad6_admin_monitoring.png)
 
----
+***
 
 ## 3. Part II — Interactions
 
@@ -325,7 +325,7 @@ Covers all use cases accessible to the Homeowner and Family Member. The Homeowne
 
 ![Use Case Diagram 1 — User Interactions](../uml/uc1_user_interactions.png)
 
----
+***
 
 #### Use Case Diagram 2 — System and Admin Interactions
 
@@ -335,13 +335,13 @@ Covers use cases triggered by the System Administrator, Automation Engine, and A
 
 ![Use Case Diagram 2 — System and Admin Interactions](../uml/uc2_system_admin.png)
 
----
+***
 
 ### 3.2 Use Case Descriptions
 
 Detailed tabular descriptions are provided for the eight primary use cases — one per major functional area.
 
----
+***
 
 #### UC-01: Log In
 
@@ -359,7 +359,7 @@ Detailed tabular descriptions are provided for the eight primary use cases — o
 | **Includes** | — |
 | **Extends** | — |
 
----
+***
 
 #### UC-02: Control Device
 
@@ -377,7 +377,7 @@ Detailed tabular descriptions are provided for the eight primary use cases — o
 | **Includes** | UC-01 Log In |
 | **Extends** | UC-06 Trigger Alert |
 
----
+***
 
 #### UC-03: Add / Remove Device
 
@@ -395,7 +395,7 @@ Detailed tabular descriptions are provided for the eight primary use cases — o
 | **Includes** | UC-01 Log In |
 | **Extends** | — |
 
----
+***
 
 #### UC-04: Create Automation Rule
 
@@ -413,7 +413,7 @@ Detailed tabular descriptions are provided for the eight primary use cases — o
 | **Includes** | UC-01 Log In |
 | **Extends** | UC-08 Generate Automation Suggestion |
 
----
+***
 
 #### UC-05: Manage Family Members
 
@@ -431,7 +431,7 @@ Detailed tabular descriptions are provided for the eight primary use cases — o
 | **Includes** | UC-01 Log In |
 | **Extends** | — |
 
----
+***
 
 #### UC-06: Trigger Alert
 
@@ -449,7 +449,7 @@ Detailed tabular descriptions are provided for the eight primary use cases — o
 | **Includes** | — |
 | **Extends** | UC-02 Control Device |
 
----
+***
 
 #### UC-07: Execute Automation Rule
 
@@ -467,7 +467,7 @@ Detailed tabular descriptions are provided for the eight primary use cases — o
 | **Includes** | — |
 | **Extends** | — |
 
----
+***
 
 #### UC-08: Generate Automation Suggestion
 
@@ -485,7 +485,7 @@ Detailed tabular descriptions are provided for the eight primary use cases — o
 | **Includes** | — |
 | **Extends** | UC-04 Create Automation Rule |
 
----
+***
 
 ### 3.3 Sequence Diagrams
 
@@ -502,7 +502,7 @@ Seven sequence diagrams are provided — one high-level stakeholder view and six
 | AD5 — Manage Family | SD6 (detailed) | UC-05 Manage Family Members |
 | AD6 — Admin Monitoring | SD7 (detailed) | Monitor System Health, Manage User Accounts |
 
----
+***
 
 #### Sequence Diagram 1 — Device Control Flow (High-Level / Stakeholder View)
 
@@ -510,7 +510,7 @@ Seven sequence diagrams are provided — one high-level stakeholder view and six
 
 ![Sequence Diagram 1 — High-Level Device Control](../uml/sd1_highlevel.png)
 
----
+***
 
 #### Sequence Diagram 2 — Device Control Flow (Detailed / Developer View)
 
@@ -522,7 +522,7 @@ Shows JWT validation, Redis cache reads and writes, Zigbee frame dispatch, HTTP 
 
 ![Sequence Diagram 2 — Detailed Device Control](../uml/sd2_device_control_detailed.png)
 
----
+***
 
 #### Sequence Diagram 3 — Automation and AI Trigger Flow (Detailed)
 
@@ -532,7 +532,7 @@ Models the fully autonomous background flow. No human initiates this sequence �
 
 ![Sequence Diagram 3 — Detailed Automation and AI](../uml/sd3_automation_detailed.png)
 
----
+***
 
 #### Sequence Diagram 4 — User Registration and Device Onboarding (Detailed)
 
@@ -542,7 +542,7 @@ Covers the full lifecycle from registration form submission through email verifi
 
 ![Sequence Diagram 4 — Detailed Onboarding](../uml/sd4_onboarding_detailed.png)
 
----
+***
 
 #### Sequence Diagram 5 — Alert and Incident Response Flow (Detailed)
 
@@ -552,7 +552,7 @@ Models the safety-critical path including emergency rule execution, false alarm 
 
 ![Sequence Diagram 5 — Detailed Alert Response](../uml/sd5_alert_detailed.png)
 
----
+***
 
 #### Sequence Diagram 6 — Manage Family Members (Detailed)
 
@@ -562,7 +562,7 @@ Models the permission propagation chain from User & Preference Service to Device
 
 ![Sequence Diagram 6 — Detailed Family Member Management](../uml/sd6_family_member_detailed.png)
 
----
+***
 
 #### Sequence Diagram 7 — System Administrator Monitoring and Configuration (Detailed)
 
@@ -572,7 +572,7 @@ Models a fundamentally different access pattern — no IoT layer, direct backend
 
 ![Sequence Diagram 7 — Detailed Admin Monitoring](../uml/sd7_admin_detailed.png)
 
----
+***
 
 ## 4. Part III — Structure
 
@@ -622,7 +622,7 @@ The class diagram models the static structure of the Smart Home Automation Syste
 
 ![Class Diagram — Smart Home Automation System](../uml/class_diagram.png)
 
----
+***
 
 ## 5. Part IV — Behavior
 
@@ -633,7 +633,7 @@ The Smart Home Automation System is classified as a **hybrid system** — it exh
 
 Accordingly, two behavioral models are provided: a State Diagram for the event-driven dimension, and a Data Flow Diagram for the data-driven dimension.
 
----
+***
 
 ### 5.1 State Diagram — Device Lifecycle
 
@@ -663,7 +663,7 @@ The state diagram models the complete lifecycle of a Device entity — the most 
 
 ![State Diagram — Device Lifecycle](../uml/state_diagram_device.png)
 
----
+***
 
 #### State-Stimulus Table
 
@@ -686,7 +686,7 @@ The state diagram models the complete lifecycle of a Device entity — the most 
 | Maintenance | Admin clears device | Online | Device status restored, rules re-enabled |
 | Removed | — | — | Terminal state — no further transitions |
 
----
+***
 
 ### 5.2 Data Flow Diagram
 
@@ -708,7 +708,7 @@ Shows the entire data pipeline as a single process with external entities and da
 
 ![DFD Level 0 — Data Management Context](../uml/dfd_l0_context.png)
 
----
+***
 
 #### DFD Level 1 — Data Management Pipeline
 
@@ -737,7 +737,7 @@ Breaks the system into four focused data management processes:
 
 ![DFD Level 1 — Data Management Pipeline](../uml/dfd_l1_pipeline.png)
 
----
+***
 
 ## 6. Design Decisions and Assumptions
 
@@ -756,7 +756,7 @@ Breaks the system into four focused data management processes:
 | 11 | User is an abstract class | No plain User is ever instantiated — every person is a Homeowner, FamilyMember, or Administrator |
 | 12 | AISuggestion modeled as separate class from AutomationRule | A suggestion has its own lifecycle and ID — it only becomes a rule after user acceptance |
 
----
+***
 
 ## 7. Traceability Matrix
 
