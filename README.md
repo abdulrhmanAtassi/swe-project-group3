@@ -130,9 +130,9 @@ The Smart Home Automation System is an IoT-based platform designed to integrate 
  
 | Member | Commits |
 |---|---|
-| Member 1 | *(fill after commits)* |
-| Member 2 | *(fill after commits)* |
-| Member 3 | *(fill after commits)* |
-| Member 4 | *(fill after commits)* |
+| Sarah | *(32)* |
+| Abdulrhman | *(18)* |
+| Osama | *(1)* |
+| Mariam | *(1)* |
 
 
