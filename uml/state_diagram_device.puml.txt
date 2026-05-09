@@ -1,0 +1,83 @@
+@startuml StateDiagram_Device
+skinparam defaultFontSize 13
+skinparam stateBorderThickness 2
+skinparam stateBackgroundColor #f0f4f8
+skinparam stateBorderColor #2c5f8a
+skinparam arrowThickness 1.5
+skinparam arrowColor #2c5f8a
+
+title State Diagram — Device Lifecycle\nSmart Home Automation System
+
+[*] --> Unregistered
+
+state Unregistered {
+    [*] --> [*]
+}
+
+state Initializing {
+    [*] --> [*]
+}
+
+state Online {
+    [*] --> Idle
+    Idle --> Executing : command dispatched
+    Executing --> Idle : ACK received
+}
+
+state Unreachable {
+    [*] --> [*]
+}
+
+state Alert {
+    [*] --> [*]
+}
+
+state Maintenance {
+    [*] --> [*]
+}
+
+state Removed {
+    [*] --> [*]
+}
+
+' ── Transitions ──
+Unregistered --> Initializing : homeowner registers device\n[device ID valid]
+
+Initializing --> Online : handshake successful\n[protocol negotiated]
+Initializing --> Unreachable : handshake failed\n[no response after 3 attempts]
+
+Online --> Unreachable : all command retries exhausted\n[no ACK from device]
+Online --> Alert : sensor anomaly detected\n[threshold exceeded]
+Online --> Removed : device deregistered\n[homeowner or admin removes]
+
+Alert --> Online : incident resolved\n[homeowner confirms resolution]
+Alert --> Maintenance : repeated alerts\n[alert count exceeds threshold]
+
+Unreachable --> Online : device reconnects\n[heartbeat received]
+Unreachable --> Maintenance : extended offline\n[offline > 24 hours]
+Unreachable --> Removed : force removed\n[admin deregisters orphaned device]
+
+Maintenance --> Online : inspection complete\n[admin clears device]
+
+Removed --> [*]
+
+note right of Online
+  Composite state:
+  device alternates between
+  Idle and Executing
+  during normal operation
+end note
+
+note right of Alert
+  Automation Engine executes
+  emergency rules immediately
+  on entry to this state
+end note
+
+note left of Maintenance
+  All automation rules
+  targeting this device
+  are disabled on entry
+end note
+
+@enduml

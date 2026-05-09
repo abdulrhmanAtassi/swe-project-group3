@@ -1,0 +1,59 @@
+@startuml DFD_L1
+skinparam defaultFontSize 13
+skinparam arrowThickness 1.5
+skinparam rectangleBorderThickness 2
+skinparam usecaseBorderThickness 2
+skinparam databaseBorderThickness 2
+
+title DFD Level 1 — Data Management Pipeline\nSmart Home Automation System
+
+' ── External Entities ──
+rectangle "Homeowner /\nFamily Member" as USER
+rectangle "System\nAdministrator" as ADMIN
+rectangle "IoT Devices" as IOT
+
+' ── Processes (oval = process in DFD) ──
+usecase "1.0\nManage User\n& Household\nData" as P1
+usecase "2.0\nManage Device\n& Configuration\nData" as P2
+usecase "3.0\nAI Learning\nData Pipeline" as P3
+usecase "4.0\nGenerate\nReports &\nDashboards" as P4
+
+' ── Data Stores ──
+database "D1\nUsers &\nPreferences" as DS1
+database "D2\nDevices &\nConfigurations" as DS2
+database "D3\nUsage History\n& Events" as DS3
+database "D4\nAI Model &\nSuggestions" as DS4
+database "D5\nReports &\nLogs" as DS5
+
+' ── P1 User & Household Data ──
+USER --> P1 : registration data,\nprofile updates,\npreferences,\nfamily member info
+P1 --> DS1 : store user accounts,\nroles, preferences
+DS1 --> P1 : existing user records\nfor validation
+P1 --> USER : account confirmation,\nupdated preferences
+
+' ── P2 Device & Configuration Data ──
+USER --> P2 : device registration,\ndevice name and room,\nconfiguration updates
+IOT --> P2 : device telemetry,\nfirmware version,\nprotocol info
+P2 --> DS2 : store device records,\nconfiguration data
+DS2 --> P2 : existing device records\nfor validation
+P2 --> IOT : configuration sync data,\nfirmware update payload
+P2 --> USER : device registration\nconfirmation
+
+' ── P3 AI Learning Pipeline ──
+DS2 --> P3 : device usage data,\nevent history
+DS1 --> P3 : user preference data,\nbehavior context
+P3 --> DS3 : processed usage\npatterns and events
+P3 --> DS4 : trained model data,\nautomation suggestions
+DS4 --> P3 : existing model\nfor retraining
+P3 --> USER : personalized\nautomation suggestions
+
+' ── P4 Reports & Dashboards ──
+DS1 --> P4 : user activity data
+DS2 --> P4 : device status data
+DS3 --> P4 : usage history
+DS4 --> P4 : AI model performance
+P4 --> DS5 : generated reports
+P4 --> USER : usage dashboard,\npersonalized insights
+P4 --> ADMIN : system health report,\nuser and device analytics
+
+@enduml

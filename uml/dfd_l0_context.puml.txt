@@ -1,0 +1,27 @@
+@startuml DFD_L0
+skinparam defaultFontSize 14
+skinparam arrowThickness 1.5
+skinparam rectangleBorderThickness 2
+skinparam usecaseBorderThickness 2
+
+title DFD Level 0 — Data Management Context\nSmart Home Automation System
+
+' ── External Entities ──
+rectangle "Homeowner /\nFamily Member" as USER
+rectangle "System\nAdministrator" as ADMIN
+rectangle "IoT Devices\n(Sensors / Actuators)" as IOT
+
+' ── System as single process ──
+usecase "Smart Home\nAutomation\nSystem\n(Data Pipeline)" as SHAS
+
+' ── Data flows ──
+USER --> SHAS : registration data,\npreferences,\nprofile updates
+SHAS --> USER : personalized responses,\nAI suggestions,\nusage reports
+
+IOT --> SHAS : sensor readings,\ndevice telemetry,\nconfiguration data
+SHAS --> IOT : configuration sync,\nfirmware update data
+
+ADMIN --> SHAS : management requests,\nconfiguration changes
+SHAS --> ADMIN : system health reports,\nuser and device analytics
+
+@enduml
